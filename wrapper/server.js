@@ -254,6 +254,19 @@ const proxy = httpProxy.createProxyServer({
   changeOrigin: false, // preserve the real Host/Origin so allowedOrigins still matches upstream
 });
 
+// OpenClaw 2026.10 requires explicit proxy attribution. The only proxy the
+// gateway trusts is this local wrapper, and the wrapper rebuilds forwarded
+// headers from the actual socket instead of passing client-supplied values.
+function applyForwardedHeaders(proxyReq, req) {
+  const remote = req.socket && req.socket.remoteAddress ? req.socket.remoteAddress : '127.0.0.1';
+  proxyReq.setHeader('x-forwarded-for', remote);
+  proxyReq.setHeader('x-forwarded-proto', 'https');
+  proxyReq.setHeader('x-forwarded-host', req.headers.host || process.env.RAILWAY_PUBLIC_DOMAIN || '');
+}
+
+proxy.on('proxyReq', applyForwardedHeaders);
+proxy.on('proxyReqWs', applyForwardedHeaders);
+
 proxy.on('error', (err, req, res) => {
   console.error('[wrapper] proxy error:', err.message);
   if (res && res.writeHead) {
