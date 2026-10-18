@@ -7,6 +7,16 @@ set -e
 openclaw config set gateway.controlUi.allowedOrigins "[\"https://$RAILWAY_PUBLIC_DOMAIN\"]" 2>/dev/null \
   || node dist/index.js config set gateway.controlUi.allowedOrigins "[\"https://$RAILWAY_PUBLIC_DOMAIN\"]"
 
+# Keep the cloud gateway lean enough for Railway's 1 GB memory ceiling.
+# Only load the plugins needed for the current OPEN CLAW cloud role.
+openclaw config set plugins.allow '["openai","memory-core","device-pair","file-transfer","linux-node"]' 2>/dev/null \
+  || node dist/index.js config set plugins.allow '["openai","memory-core","device-pair","file-transfer","linux-node"]'
+
+# Browser/computer control will be added later through a dedicated node; do not
+# start the cloud browser plugin on this memory-constrained gateway.
+openclaw config set browser.enabled false 2>/dev/null \
+  || node dist/index.js config set browser.enabled false
+
 # Inject the /setup banner + auto-reconnect listener into the served
 # Control UI HTML. Static assets aren't on the persistent volume, so this
 # file is always pristine at container start and needs re-injecting every
