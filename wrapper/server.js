@@ -37,16 +37,38 @@ const gatewayEnv = Object.assign({}, process.env, {
   OPENCLAW_GATEWAY_PORT: String(GATEWAY_PORT),
 });
 
-const gateway = spawn(
-  'node',
-  ['dist/index.js', 'gateway', '--bind', 'loopback', '--port', String(GATEWAY_PORT), '--allow-unconfigured'],
-  { env: gatewayEnv, stdio: 'inherit' }
-);
+let gateway = null;
+let restartTimer = null;
 
-gateway.on('exit', (code) => {
-  console.error(`[wrapper] gateway process exited (code ${code}); exiting wrapper too`);
-  process.exit(code || 1);
-});
+function startGateway() {
+  console.log(`[wrapper] starting gateway on 127.0.0.1:${GATEWAY_PORT}`);
+
+  gateway = spawn(
+    'node',
+    ['dist/index.js', 'gateway', '--bind', 'loopback', '--port', String(GATEWAY_PORT), '--allow-unconfigured'],
+    { env: gatewayEnv, stdio: 'inherit' }
+  );
+
+  gateway.on('exit', (code, signal) => {
+    console.error(
+      `[wrapper] gateway process exited (code ${code}, signal ${signal || 'none'}); keeping wrapper alive and restarting gateway`
+    );
+    gateway = null;
+
+    // Newer OpenClaw builds can replace/restart the gateway process as part
+    // of their own lifecycle. Do not kill the Railway wrapper when that
+    // happens: keep the public HTTP server alive and start a fresh gateway
+    // after a short grace period.
+    clearTimeout(restartTimer);
+    restartTimer = setTimeout(startGateway, 2000);
+  });
+
+  gateway.on('error', (err) => {
+    console.error('[wrapper] gateway spawn error:', err.message);
+  });
+}
+
+startGateway();
 
 function runCli(args) {
   return new Promise((resolve) => {
