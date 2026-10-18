@@ -7,6 +7,11 @@ set -e
 openclaw config set gateway.controlUi.allowedOrigins "[\"https://$RAILWAY_PUBLIC_DOMAIN\"]" 2>/dev/null \
   || node dist/index.js config set gateway.controlUi.allowedOrigins "[\"https://$RAILWAY_PUBLIC_DOMAIN\"]"
 
+# The public wrapper connects to the gateway only over loopback. Trust only
+# that proxy hop; all forwarded client headers are rebuilt by wrapper/server.js.
+openclaw config set gateway.trustedProxies '["127.0.0.1","::1"]' 2>/dev/null \
+  || node dist/index.js config set gateway.trustedProxies '["127.0.0.1","::1"]'
+
 # Keep the cloud gateway lean enough for Railway's 1 GB memory ceiling.
 # Only load the plugins needed for the current OPEN CLAW cloud role.
 openclaw config set plugins.allow '["openai","memory-core","device-pair","file-transfer","linux-node"]' 2>/dev/null \
