@@ -26,6 +26,12 @@ openclaw config set plugins.entries.browser.enabled false 2>/dev/null \
 openclaw config set plugins.entries.cua-computer.enabled false 2>/dev/null \
   || node dist/index.js config set plugins.entries.cua-computer.enabled false
 
+
+# Make the main model explicit so Control UI first-run detection recognizes a
+# completed inference route instead of bouncing back to model setup.
+openclaw models set openai/gpt-6-astra 2>/dev/null \
+  || node dist/index.js models set openai/gpt-6-astra
+
 # Inject the /setup banner + auto-reconnect listener into the served
 # Control UI HTML. Static assets aren't on the persistent volume, so this
 # file is always pristine at container start and needs re-injecting every
