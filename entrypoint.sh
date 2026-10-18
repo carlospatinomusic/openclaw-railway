@@ -16,6 +16,10 @@ openclaw config set plugins.allow '["openai","memory-core","device-pair","file-t
 # start the cloud browser plugin on this memory-constrained gateway.
 openclaw config set browser.enabled false 2>/dev/null \
   || node dist/index.js config set browser.enabled false
+openclaw config set plugins.entries.browser.enabled false 2>/dev/null \
+  || node dist/index.js config set plugins.entries.browser.enabled false
+openclaw config set plugins.entries.cua-computer.enabled false 2>/dev/null \
+  || node dist/index.js config set plugins.entries.cua-computer.enabled false
 
 # Inject the /setup banner + auto-reconnect listener into the served
 # Control UI HTML. Static assets aren't on the persistent volume, so this
